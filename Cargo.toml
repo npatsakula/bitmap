@@ -3,6 +3,9 @@ name = "dyn_bitmap"
 version = "0.0.1"
 authors = ["Patsakula Nikita <nikita.patsakula@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Dynamically sized lightweight bitmap implementation."
+documentation = "https://docs.rs/dyn_bitmap"
 
 [dependencies]
 thiserror = "1.0.21"
