@@ -6,6 +6,7 @@ edition = "2018"
 license = "MIT"
 description = "Dynamically sized lightweight bitmap implementation."
 documentation = "https://docs.rs/dyn_bitmap"
+repository = "https://github.com/npatsakula/bitmap"
 
 [dependencies]
 thiserror = "1.0.21"
