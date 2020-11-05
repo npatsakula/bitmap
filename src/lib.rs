@@ -231,7 +231,7 @@ mod bitmap_tests {
         let cursor = std::io::Cursor::new(&mut buffer);
 
         bitmap.write(cursor).unwrap();
-        assert_eq!(buffer.as_slice(), &0b1001_0010_0100_1001u16.to_ne_bytes());
+        assert_eq!(buffer.as_slice(), &0b1001_0010_0100_1001u16.to_le_bytes());
     }
 
     #[test]
@@ -246,7 +246,7 @@ mod bitmap_tests {
 
             assert_eq!(
                 cursor.get_ref().as_slice(),
-                ((1u32 << (i as u32 + 1)) - 1).to_ne_bytes());
+                ((1u32 << (i as u32 + 1)) - 1).to_le_bytes());
         }
     }
 
