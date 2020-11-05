@@ -17,10 +17,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Format
-      run: cargo fmt --all
+      run: cargo fmt --all -- --check
     - name: Build
-      run: cargo build --verbose --all-targets
+      run: RUSTFLAGS="-D warnings" cargo build --verbose --all-targets
     - name: Clippy
-      run: cargo clippy --all-targets
+      run: cargo clippy --all-targets --all-features --locked -- -D warnings -D clippy::wildcard_imports -D clippy::cognitive_complexity
     - name: Run tests
       run: cargo test --verbose
