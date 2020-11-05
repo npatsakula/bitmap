@@ -239,14 +239,15 @@ mod bitmap_tests {
         let mut bitmap = DynBitmap::contained(32);
         let mut cursor: std::io::Cursor<Vec<u8>> = Default::default();
 
-        for i in 0 .. bitmap.bits_capacity()-1 {
+        for i in 0..bitmap.bits_capacity() - 1 {
             bitmap.set(i).unwrap();
             cursor.set_position(0);
             bitmap.write(&mut cursor).unwrap();
 
             assert_eq!(
                 cursor.get_ref().as_slice(),
-                ((1u32 << (i as u32 + 1)) - 1).to_le_bytes());
+                ((1u32 << (i as u32 + 1)) - 1).to_le_bytes()
+            );
         }
     }
 
@@ -254,11 +255,11 @@ mod bitmap_tests {
     fn value_get() {
         let mut bitmap = DynBitmap::contained(32);
 
-        for i in 0 .. bitmap.bits_capacity()-1 {
+        for i in 0..bitmap.bits_capacity() - 1 {
             bitmap.set(i).unwrap();
         }
 
-        for i in 0 .. bitmap.bits_capacity()-1 {
+        for i in 0..bitmap.bits_capacity() - 1 {
             assert!(bitmap.get(i).unwrap());
         }
     }
@@ -267,15 +268,15 @@ mod bitmap_tests {
     fn value_clear() {
         let mut bitmap = DynBitmap::contained(32);
 
-        for i in 0 .. bitmap.bits_capacity()-1 {
+        for i in 0..bitmap.bits_capacity() - 1 {
             bitmap.set(i).unwrap();
         }
 
-        for i in 0 .. bitmap.bits_capacity()-1 {
+        for i in 0..bitmap.bits_capacity() - 1 {
             bitmap.clear(i).unwrap();
         }
 
-        for i in 0 .. bitmap.bits_capacity()-1 {
+        for i in 0..bitmap.bits_capacity() - 1 {
             assert!(!bitmap.get(i).unwrap());
         }
     }
