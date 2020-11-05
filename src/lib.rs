@@ -246,7 +246,7 @@ mod bitmap_tests {
 
             assert_eq!(
                 cursor.get_ref().as_slice(),
-                ((1u32 << (i as u32 + 1)) - 1).to_ne_bytes().as_ref());
+                ((1u32 << (i as u32 + 1)) - 1).to_ne_bytes());
         }
     }
 
