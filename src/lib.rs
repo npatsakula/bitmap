@@ -237,17 +237,16 @@ mod bitmap_tests {
     #[test]
     fn value_write() {
         let mut bitmap = DynBitmap::contained(32);
-        let mut buffer = vec![0; bitmap.byte_size()];
+        let mut cursor: std::io::Cursor<Vec<u8>> = Default::default();
 
         for i in 0 .. bitmap.bits_capacity()-1 {
             bitmap.set(i).unwrap();
-
-            let cursor = std::io::Cursor::new(&mut buffer);
-            bitmap.write(cursor).unwrap();
+            cursor.set_position(0);
+            bitmap.write(&mut cursor).unwrap();
 
             assert_eq!(
-                buffer.as_slice(),
-                (2u32.pow(i as u32 + 1) - 1).to_ne_bytes());
+                cursor.get_ref().as_slice(),
+                ((1u32 << (i as u32 + 1)) - 1).to_ne_bytes().as_ref());
         }
     }
 
