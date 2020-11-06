@@ -115,10 +115,10 @@ impl DynBitmap {
     /// let mut bitmap = dyn_bitmap::DynBitmap::contained(3);
     /// bitmap.set(0).unwrap();
     /// assert!(bitmap.get(0).unwrap());
-    /// bitmap.clear(0).unwrap();
+    /// bitmap.unset(0).unwrap();
     /// assert!(!bitmap.get(0).unwrap());
     /// ```
-    pub fn clear(&mut self, bit_index: usize) -> Result<(), Error> {
+    pub fn unset(&mut self, bit_index: usize) -> Result<(), Error> {
         let byte = self.get_byte_mut(bit_index)?;
         let position_in_byte = Self::position_in_byte(bit_index) as u8;
         *byte &= !(1 << position_in_byte);
@@ -188,7 +188,7 @@ mod bitmap_tests {
         bitmap.set(6).unwrap();
         assert!(bitmap.get(6).unwrap());
 
-        bitmap.clear(6).unwrap();
+        bitmap.unset(6).unwrap();
         assert!(!bitmap.get(6).unwrap());
 
         assert!(!bitmap.get(0).unwrap());
@@ -254,7 +254,7 @@ mod bitmap_tests {
         }
 
         for i in 0..bitmap.bits_capacity() - 1 {
-            bitmap.clear(i).unwrap();
+            bitmap.unset(i).unwrap();
         }
 
         for i in 0..bitmap.bits_capacity() - 1 {
