@@ -9,14 +9,12 @@ pub enum Error {
 /// Dynamicaly sized bitmap.
 ///
 /// ```
-/// # fn main() {
 /// let mut bitmap = dyn_bitmap::DynBitmap::contained(3);
 /// bitmap.set(0).unwrap();
 /// bitmap.set(2).unwrap();
 /// assert!(bitmap.get(0).unwrap());
 /// assert!(!bitmap.get(1).unwrap());
 /// assert!(bitmap.get(2).unwrap());
-/// # }
 /// ```
 pub struct DynBitmap {
     buffer: Vec<u8>,
@@ -28,9 +26,7 @@ impl DynBitmap {
     /// # Example
     /// ```
     /// use dyn_bitmap::DynBitmap;
-    /// # fn main() {
     /// let bimap = DynBitmap::contained(13);
-    /// # }
     /// ```
     pub fn contained(bits: usize) -> Self {
         Self {
@@ -43,11 +39,8 @@ impl DynBitmap {
     /// # Example
     /// ```
     /// use dyn_bitmap::DynBitmap;
-    ///
-    /// # fn main() {
     /// let bitmap = DynBitmap::contained(10);
     /// assert_eq!(bitmap.byte_size(), DynBitmap::bytes_required(10));
-    /// # }
     /// ```
     pub const fn bytes_required(bits: usize) -> usize {
         (bits + 7) / 8
@@ -87,12 +80,10 @@ impl DynBitmap {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// let mut bitmap = dyn_bitmap::DynBitmap::contained(3);
     /// bitmap.set(0).unwrap();
     /// assert!(bitmap.get(0).unwrap());
     /// assert!(!bitmap.get(1).unwrap());
-    /// # }
     /// ```
     pub fn get(&self, bit_index: usize) -> Result<bool, Error> {
         let byte: u8 = self.get_byte(bit_index)?;
@@ -105,12 +96,10 @@ impl DynBitmap {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// let mut bitmap = dyn_bitmap::DynBitmap::contained(3);
     /// assert!(!bitmap.get(0).unwrap());
     /// bitmap.set(0).unwrap();
     /// assert!(bitmap.get(0).unwrap());
-    /// # }
     /// ```
     pub fn set(&mut self, bit_index: usize) -> Result<(), Error> {
         let byte = self.get_byte_mut(bit_index)?;
@@ -123,13 +112,11 @@ impl DynBitmap {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// let mut bitmap = dyn_bitmap::DynBitmap::contained(3);
     /// bitmap.set(0).unwrap();
     /// assert!(bitmap.get(0).unwrap());
     /// bitmap.clear(0).unwrap();
     /// assert!(!bitmap.get(0).unwrap());
-    /// # }
     /// ```
     pub fn clear(&mut self, bit_index: usize) -> Result<(), Error> {
         let byte = self.get_byte_mut(bit_index)?;
@@ -142,7 +129,6 @@ impl DynBitmap {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// let mut bitmap = dyn_bitmap::DynBitmap::contained(8);
     ///
     /// bitmap.set(0).unwrap();
@@ -154,7 +140,6 @@ impl DynBitmap {
     /// let mut cursor = std::io::Cursor::new(&mut buffer);
     /// bitmap.write(cursor).unwrap();
     /// assert_eq!(&buffer, &0b0101_0101u8.to_le_bytes());
-    /// }
     /// ```
     pub fn write<W: std::io::Write>(&self, mut writer: W) -> std::io::Result<()> {
         writer.write_all(&self.buffer)
@@ -164,10 +149,8 @@ impl DynBitmap {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// let bitmap = dyn_bitmap::DynBitmap::contained(9);
     /// assert_eq!(bitmap.byte_size(), 2);
-    /// # }
     /// ```
     pub fn byte_size(&self) -> usize {
         self.buffer.len()
@@ -177,10 +160,8 @@ impl DynBitmap {
     ///
     /// # Example
     /// ```
-    /// # fn main() {
     /// let bitmap = dyn_bitmap::DynBitmap::contained(9);
     /// assert_eq!(bitmap.bits_capacity(), 16);
-    /// # }
     /// ```
     pub fn bits_capacity(&self) -> usize {
         self.byte_size() * 8
