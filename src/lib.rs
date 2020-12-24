@@ -10,8 +10,8 @@ pub enum Error {
 ///
 /// ```
 /// let mut bitmap = dyn_bitmap::DynBitmap::contained(3);
-/// bitmap.set(0).unwrap();
-/// bitmap.set(2).unwrap();
+/// bitmap.set(0, true).unwrap();
+/// bitmap.set(2, true).unwrap();
 /// assert!(bitmap.get(0).unwrap());
 /// assert!(!bitmap.get(1).unwrap());
 /// assert!(bitmap.get(2).unwrap());
@@ -81,7 +81,7 @@ impl DynBitmap {
     /// # Example
     /// ```
     /// let mut bitmap = dyn_bitmap::DynBitmap::contained(3);
-    /// bitmap.set(0).unwrap();
+    /// bitmap.set(0, true).unwrap();
     /// assert!(bitmap.get(0).unwrap());
     /// assert!(!bitmap.get(1).unwrap());
     /// ```
@@ -102,12 +102,13 @@ impl DynBitmap {
     /// assert!(bitmap.get(0).unwrap());
     /// ```
     pub fn set(&mut self, bit_index: usize, value: bool) -> Result<(), Error> {
-        let value = value as u8;
-        dbg!(value);
-           
         let byte = self.get_byte_mut(bit_index)?;
         let position_in_byte = Self::position_in_byte(bit_index);
-        *byte |= value << position_in_byte;
+        if value {
+            *byte ^= 1u8 << position_in_byte;
+        } else {
+            *byte &= !(1u8 << position_in_byte);
+        }
         Ok(())
     }
 
@@ -117,10 +118,10 @@ impl DynBitmap {
     /// ```
     /// let mut bitmap = dyn_bitmap::DynBitmap::contained(8);
     ///
-    /// bitmap.set(0).unwrap();
-    /// bitmap.set(2).unwrap();
-    /// bitmap.set(4).unwrap();
-    /// bitmap.set(6).unwrap();
+    /// bitmap.set(0, true).unwrap();
+    /// bitmap.set(2, true).unwrap();
+    /// bitmap.set(4, true).unwrap();
+    /// bitmap.set(6, true).unwrap();
     ///
     /// let mut buffer: Vec<u8> = Default::default();
     /// let mut cursor = std::io::Cursor::new(&mut buffer);
