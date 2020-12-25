@@ -207,6 +207,74 @@ impl IntoIterator for DynBitmap {
     }
 }
 
+pub struct BitmapIter<'a> {
+    bitmap: &'a DynBitmap,
+    index: usize,
+}
+
+impl<'a> Iterator for BitmapIter<'a> {
+    type Item = bool;
+    fn next(&mut self) -> Option<bool> {
+        self.index += 1;
+        if self.index > self.bitmap.bits_capacity() {
+            return None;
+        }
+
+        self.bitmap.get(self.index).ok()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.bitmap.bits - self.index, Some(self.bitmap.bits))
+    }
+}
+
+impl<'a> IntoIterator for &'a DynBitmap {
+    type Item = bool;
+    type IntoIter = BitmapIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BitmapIter{
+            bitmap: self,
+            index: 0,
+        }
+    }
+}
+
+
+pub struct BitmapMutIter<'a> {
+    bitmap: &'a mut DynBitmap,
+    index: usize,
+}
+
+impl<'a> Iterator for BitmapMutIter<'a> {
+    type Item = bool;
+    fn next(&mut self) -> Option<bool> {
+        self.index += 1;
+        if self.index > self.bitmap.bits_capacity() {
+            return None;
+        }
+
+        self.bitmap.get(self.index).ok()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.bitmap.bits - self.index, Some(self.bitmap.bits))
+    }
+}
+
+impl<'a> IntoIterator for &'a mut DynBitmap {
+    type Item = bool;
+    type IntoIter = BitmapMutIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BitmapMutIter{
+            bitmap: self,
+            index: 0,
+        }
+    }
+
+}
+
 impl std::iter::FromIterator<bool> for DynBitmap {
     fn from_iter<I: IntoIterator<Item = bool>>(iter: I) -> Self {
         let iter = iter.into_iter();
