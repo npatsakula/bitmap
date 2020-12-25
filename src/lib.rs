@@ -16,6 +16,7 @@ pub enum Error {
 /// assert!(!bitmap.get(1).unwrap());
 /// assert!(bitmap.get(2).unwrap());
 /// ```
+#[derive(Debug, Clone)]
 pub struct DynBitmap {
     buffer: Vec<u8>,
     bits: usize,
@@ -101,6 +102,11 @@ impl DynBitmap {
         }
     }
 
+    #[inline(always)]
+    pub fn set_value_in_byte(byte: &mut u8, value: bool, position: u8) {
+        *byte = (*byte & !(1u8 << position)) | ((value as u8) << position);
+    }
+
     /// Set bit value as `true`.
     ///
     /// # Example
@@ -111,17 +117,17 @@ impl DynBitmap {
     /// assert!(bitmap.get(0).unwrap());
     /// ```
     pub fn set(&mut self, bit_index: usize, value: bool) -> Result<(), Error> {
-        if bit_index < self.bits {
-            let byte = self.get_byte_mut(bit_index)?;
-            let position_in_byte = Self::position_in_byte(bit_index);
-            *byte = (*byte & !(1u8 << position_in_byte)) | ((value as u8) << position_in_byte);
-            Ok(())
-        } else {
-            Err(Error::OutOfBound {
+        if bit_index > self.bits {
+            return Err(Error::OutOfBound {
                 index: bit_index,
                 max_index: self.bits,
-            })
+            });
         }
+
+        let byte = self.get_byte_mut(bit_index)?;
+        let position_in_byte = Self::position_in_byte(bit_index);
+        Self::set_value_in_byte(byte, value, position_in_byte);
+        Ok(())
     }
 
     /// Write [bitmap](struct.DynBitmap.html) by `impl std::io::Write`.
@@ -176,9 +182,12 @@ impl Iterator for BitmapIterator {
     type Item = bool;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let result = self.bitmap.get(self.index).ok();
         self.index += 1;
-        result
+        if self.index > self.bitmap.bits_capacity() {
+            return None;
+        }
+
+        self.bitmap.get(self.index).ok()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -201,19 +210,43 @@ impl IntoIterator for DynBitmap {
 impl std::iter::FromIterator<bool> for DynBitmap {
     fn from_iter<I: IntoIterator<Item = bool>>(iter: I) -> Self {
         let iter = iter.into_iter();
-        let size = iter.size_hint().1.unwrap();
-        let mut result = Self::contained(size);
 
-        for (index, bit) in iter.enumerate() {
-            result.set(index, bit).unwrap();
+        let mut buffer: Vec<u8> = Vec::with_capacity(iter.size_hint().1.unwrap_or(0));
+        let mut bnb_index: u8 = 0;
+        let mut byte: u8 = 0;
+        let mut bits: usize = 0;
+
+        for bit in iter {
+            if bnb_index >= 7 {
+                buffer.push(byte);
+                byte = 0;
+                bnb_index = 0;
+            } else {
+                bnb_index += 1;
+            }
+
+            Self::set_value_in_byte(&mut byte, bit, bnb_index);
+            bits += 1;
         }
-        result
+
+        Self { buffer, bits }
     }
 }
 
 #[cfg(test)]
 mod bitmap_tests {
     use super::DynBitmap;
+    use std::{io::Cursor, iter};
+
+    #[test]
+    fn size_hint_optimization() {
+        let source = vec![true, false, false];
+        let iter = source.iter();
+
+        assert_eq!(iter.size_hint().1.unwrap(), 3);
+        let bitmap: DynBitmap = iter.cloned().collect();
+        assert_eq!(bitmap.bits_capacity(), 3);
+    }
 
     #[test]
     fn new() {
@@ -246,23 +279,9 @@ mod bitmap_tests {
     }
 
     #[test]
-    fn write() {
-        let mut bitmap = DynBitmap::contained(12);
-        for idx in (0..bitmap.bits_capacity()).step_by(3) {
-            bitmap.set(idx, true).unwrap();
-        }
-
-        let mut buffer = vec![0u8; bitmap.byte_size()];
-        let cursor = std::io::Cursor::new(&mut buffer);
-
-        bitmap.write(cursor).unwrap();
-        assert_eq!(buffer.as_slice(), &0b0000_0010_0100_1001u16.to_le_bytes());
-    }
-
-    #[test]
     fn value_write() {
         let mut bitmap = DynBitmap::contained(32);
-        let mut cursor: std::io::Cursor<Vec<u8>> = Default::default();
+        let mut cursor: Cursor<Vec<u8>> = Default::default();
 
         for i in 0..bitmap.bits_capacity() - 1 {
             bitmap.set(i, true).unwrap();
@@ -277,7 +296,7 @@ mod bitmap_tests {
     }
 
     #[test]
-    fn value_get() {
+    fn set_all_manual() {
         let mut bitmap = DynBitmap::contained(30);
         for i in 0..bitmap.bits_capacity() {
             bitmap.set(i, true).unwrap();
@@ -286,14 +305,20 @@ mod bitmap_tests {
     }
 
     #[test]
+    fn set_all_iter() {
+        let bitmap: DynBitmap = iter::repeat(true).take(30).collect();
+        assert!(bitmap.into_iter().all(|b| b));
+    }
+
+    #[test]
     fn value_clear() {
-        let mut bitmap = DynBitmap::contained(32);
-        for i in 0..bitmap.bits_capacity() {
-            bitmap.set(i, true).unwrap();
-        }
+        let mut bitmap: DynBitmap = iter::repeat(true).take(32).collect();
+        assert!(bitmap.clone().into_iter().all(|b| b));
+
         for i in 0..bitmap.bits_capacity() {
             bitmap.set(i, false).unwrap();
         }
+
         assert!(bitmap.into_iter().all(|b| !b));
     }
 }
