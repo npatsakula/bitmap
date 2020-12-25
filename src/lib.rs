@@ -69,7 +69,7 @@ impl DynBitmap {
             })
     }
 
-    fn get_byte_mut(&mut self, bit_index: usize) -> Result<&mut u8, Error> {
+    fn get_byte_mut<'a>(&'a mut self, bit_index: usize) -> Result<&'a mut u8, Error> {
         let max_index = self.bits_capacity();
         self.buffer
             .get_mut(Self::contained_byte_index(bit_index))
@@ -92,14 +92,20 @@ impl DynBitmap {
         if bit_index < self.bits {
             let byte: u8 = self.get_byte(bit_index)?;
             let position_in_byte = Self::position_in_byte(bit_index);
-            let bit: u8 = (byte >> position_in_byte) & 0x01;
-            Ok(bit == 1)
+            let result = Self::get_value_from_byte(byte, position_in_byte);
+            Ok(result)
         } else {
             Err(Error::OutOfBound {
                 index: bit_index,
                 max_index: self.bits,
             })
         }
+    }
+
+    #[inline(always)]
+    pub fn get_value_from_byte(byte: u8, position: u8) -> bool {
+        let bit: u8 = (byte >> position) & 0x01;
+        bit == 1
     }
 
     #[inline(always)]
@@ -171,6 +177,10 @@ impl DynBitmap {
     pub fn bits_capacity(&self) -> usize {
         self.bits
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = bool> + '_ {
+        BitmapIter::new(self)
+    }
 }
 
 pub struct BitmapIterator {
@@ -212,6 +222,12 @@ pub struct BitmapIter<'a> {
     index: usize,
 }
 
+impl<'a> BitmapIter<'a> {
+    fn new(bitmap: &'a DynBitmap) -> Self {
+        Self { bitmap, index: 0 }
+    }
+}
+
 impl<'a> Iterator for BitmapIter<'a> {
     type Item = bool;
     fn next(&mut self) -> Option<bool> {
@@ -226,53 +242,6 @@ impl<'a> Iterator for BitmapIter<'a> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         (self.bitmap.bits - self.index, Some(self.bitmap.bits))
     }
-}
-
-impl<'a> IntoIterator for &'a DynBitmap {
-    type Item = bool;
-    type IntoIter = BitmapIter<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        BitmapIter{
-            bitmap: self,
-            index: 0,
-        }
-    }
-}
-
-
-pub struct BitmapMutIter<'a> {
-    bitmap: &'a mut DynBitmap,
-    index: usize,
-}
-
-impl<'a> Iterator for BitmapMutIter<'a> {
-    type Item = bool;
-    fn next(&mut self) -> Option<bool> {
-        self.index += 1;
-        if self.index > self.bitmap.bits_capacity() {
-            return None;
-        }
-
-        self.bitmap.get(self.index).ok()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.bitmap.bits - self.index, Some(self.bitmap.bits))
-    }
-}
-
-impl<'a> IntoIterator for &'a mut DynBitmap {
-    type Item = bool;
-    type IntoIter = BitmapMutIter<'a>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        BitmapMutIter{
-            bitmap: self,
-            index: 0,
-        }
-    }
-
 }
 
 impl std::iter::FromIterator<bool> for DynBitmap {
@@ -369,24 +338,24 @@ mod bitmap_tests {
         for i in 0..bitmap.bits_capacity() {
             bitmap.set(i, true).unwrap();
         }
-        assert!(bitmap.into_iter().all(|b| b));
+        assert!(bitmap.iter().all(|b| b));
     }
 
     #[test]
     fn set_all_iter() {
         let bitmap: DynBitmap = iter::repeat(true).take(30).collect();
-        assert!(bitmap.into_iter().all(|b| b));
+        assert!(bitmap.iter().all(|b| b));
     }
 
     #[test]
     fn value_clear() {
         let mut bitmap: DynBitmap = iter::repeat(true).take(32).collect();
-        assert!(bitmap.clone().into_iter().all(|b| b));
+        assert!(bitmap.iter().all(|b| b));
 
         for i in 0..bitmap.bits_capacity() {
             bitmap.set(i, false).unwrap();
         }
 
-        assert!(bitmap.into_iter().all(|b| !b));
+        assert!(bitmap.iter().all(|b| !b));
     }
 }
