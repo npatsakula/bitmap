@@ -218,29 +218,48 @@ impl IntoIterator for DynBitmap {
 }
 
 pub struct BitmapIter<'a> {
-    bitmap: &'a DynBitmap,
-    index: usize,
+    source: std::slice::Iter<'a, u8>,
+    byte: u8,
+    bit_idx: u8,
+
+    rest: usize,
 }
 
 impl<'a> BitmapIter<'a> {
     fn new(bitmap: &'a DynBitmap) -> Self {
-        Self { bitmap, index: 0 }
+        Self {
+            source: bitmap.buffer.iter(),
+            byte: 0,
+            bit_idx: 7,
+            rest: bitmap.bits_capacity() + 1,
+        }
     }
 }
 
 impl<'a> Iterator for BitmapIter<'a> {
     type Item = bool;
     fn next(&mut self) -> Option<bool> {
-        self.index += 1;
-        if self.index > self.bitmap.bits_capacity() {
+        dbg!(self.rest, self.bit_idx);
+
+        if self.rest == 0 {
             return None;
         }
 
-        self.bitmap.get(self.index).ok()
+        if self.bit_idx == 7 {
+            self.byte = *self.source.next()?;
+            dbg!(self.byte);
+            self.bit_idx = 0;
+        } else {
+            self.bit_idx += 1;
+        }
+
+        self.rest -= 1;
+        let result = DynBitmap::get_value_from_byte(self.byte, self.bit_idx);
+        Some(result)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (self.bitmap.bits - self.index, Some(self.bitmap.bits))
+        (self.rest, None)
     }
 }
 
@@ -254,7 +273,7 @@ impl std::iter::FromIterator<bool> for DynBitmap {
         let mut bits: usize = 0;
 
         for bit in iter {
-            if bnb_index >= 7 {
+            if bnb_index == 7 {
                 buffer.push(byte);
                 byte = 0;
                 bnb_index = 0;
@@ -350,6 +369,7 @@ mod bitmap_tests {
     #[test]
     fn value_clear() {
         let mut bitmap: DynBitmap = iter::repeat(true).take(32).collect();
+        dbg!(bitmap.iter().collect::<Vec<_>>());
         assert!(bitmap.iter().all(|b| b));
 
         for i in 0..bitmap.bits_capacity() {
