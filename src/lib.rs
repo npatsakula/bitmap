@@ -102,6 +102,11 @@ impl DynBitmap {
         Ok(bit == 1)
     }
 
+    #[inline(always)]
+    fn set_value(byte: u8, value: bool, index: u8) -> u8 {
+        byte & !(1 << index) | ((value as u8) << index)
+    }
+
     /// Set bit value as `true`.
     ///
     /// # Example
@@ -114,7 +119,7 @@ impl DynBitmap {
     pub fn set(&mut self, bit_index: usize, value: bool) -> Result<(), Error> {
         let byte: &mut u8 = self.get_byte_mut(bit_index)?;
         let position: u8 = Self::position_in_byte(bit_index);
-        *byte = *byte & !(1 << position) | ((value as u8) << position);
+        *byte = Self::set_value(*byte, value, position);
         Ok(())
     }
 
@@ -158,6 +163,37 @@ impl DynBitmap {
     /// ```
     pub fn arity(&self) -> usize {
         self.bit_count
+    }
+}
+
+impl std::iter::FromIterator<bool> for DynBitmap {
+    fn from_iter<I: IntoIterator<Item = bool>>(iter: I) -> Self {
+        let iter = iter.into_iter();
+        let initial_size = iter.size_hint().1.map(Self::bytes_required).unwrap_or(0);
+
+        let mut buffer = Vec::with_capacity(initial_size);
+        let mut bit_count = 0;
+        let mut bit_idx = 0;
+        let mut byte = 0;
+
+        for value in iter {
+            if bit_idx == 8 {
+                buffer.push(byte);
+                byte = 0;
+                bit_idx = 0;
+            } else {
+                byte = Self::set_value(byte, value, bit_idx);
+                bit_idx += 1;
+            }
+
+            bit_count += 1;
+        }
+
+        if bit_idx != 0 {
+            buffer.push(byte);
+        }
+
+        Self { buffer, bit_count }
     }
 }
 
@@ -223,6 +259,20 @@ mod bitmap_tests {
         bitmap.set(0, false).unwrap();
         dbg!(&bitmap);
         assert!(!bitmap.get(0).unwrap());
+    }
+
+    #[test]
+    fn from_iter() {
+        let source = &[true, false, false, true];
+        let bitmap: DynBitmap = source.iter().copied().collect();
+        dbg!(&bitmap, source);
+
+        assert_eq!(bitmap.get(0).unwrap(), true);
+        assert_eq!(bitmap.get(1).unwrap(), false);
+        assert_eq!(bitmap.get(2).unwrap(), false);
+        assert_eq!(bitmap.get(3).unwrap(), true);
+        assert_eq!(bitmap.arity(), 4);
+        assert_eq!(bitmap.buffer.len(), 1);
     }
 
     #[test]
