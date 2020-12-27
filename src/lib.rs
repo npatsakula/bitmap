@@ -19,6 +19,7 @@ pub enum Error {
 #[derive(Debug)]
 pub struct DynBitmap {
     buffer: Vec<u8>,
+    bit_count: usize,
 }
 
 impl DynBitmap {
@@ -32,6 +33,7 @@ impl DynBitmap {
     pub fn contained(bits: usize) -> Self {
         Self {
             buffer: vec![0u8; Self::bytes_required(bits)],
+            bit_count: bits,
         }
     }
 
@@ -87,6 +89,13 @@ impl DynBitmap {
     /// assert!(!bitmap.get(1).unwrap());
     /// ```
     pub fn get(&self, bit_index: usize) -> Result<bool, Error> {
+        if bit_index >= self.bit_count {
+            return Err(Error::OutOfBound {
+                index: bit_index,
+                max_index: self.bit_count - 1,
+            });
+        }
+
         let byte: u8 = self.get_byte(bit_index)?;
         let position_in_byte = Self::position_in_byte(bit_index);
         let bit: u8 = (byte >> position_in_byte) & 0x01;
@@ -154,7 +163,7 @@ impl DynBitmap {
 
 #[cfg(test)]
 mod bitmap_tests {
-    use super::DynBitmap;
+    use super::{DynBitmap, Error};
 
     #[test]
     fn new() {
@@ -179,6 +188,25 @@ mod bitmap_tests {
         assert_eq!(bitmap.get_byte_mut(8).unwrap() as *const u8, unsafe {
             bitmap.buffer.as_ptr().add(1)
         },);
+    }
+
+    #[test]
+    fn get() {
+        let mut bitmap = DynBitmap::contained(7);
+        dbg!(&bitmap);
+
+        bitmap.set(6, true).unwrap();
+        dbg!(&bitmap);
+
+        assert!(bitmap.get(6).unwrap());
+
+        match bitmap.get(9) {
+            Ok(_) => unreachable!("This brunch must fail!"),
+            Err(Error::OutOfBound { index, max_index }) => {
+                assert_eq!(index, 9);
+                assert_eq!(max_index, 6);
+            }
+        };
     }
 
     #[test]
