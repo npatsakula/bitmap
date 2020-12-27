@@ -10,4 +10,4 @@ repository = "https://github.com/npatsakula/bitmap"
 readme = "README.md"
 
 [dependencies]
-thiserror = "1.0.21"
+thiserror = "1"
