@@ -65,12 +65,12 @@ impl DynBitmap {
             .copied()
             .ok_or(Error::OutOfBound {
                 index: bit_index,
-                max_index: self.bits_capacity(),
+                max_index: self.arity(),
             })
     }
 
     fn get_byte_mut(&mut self, bit_index: usize) -> Result<&mut u8, Error> {
-        let max_index = self.bits_capacity();
+        let max_index = self.arity();
         self.buffer
             .get_mut(Self::contained_byte_index(bit_index))
             .ok_or(Error::OutOfBound {
@@ -154,10 +154,10 @@ impl DynBitmap {
     /// # Example
     /// ```
     /// let bitmap = dyn_bitmap::DynBitmap::contained(9);
-    /// assert_eq!(bitmap.bits_capacity(), 16);
+    /// assert_eq!(bitmap.arity(), 9);
     /// ```
-    pub fn bits_capacity(&self) -> usize {
-        self.byte_size() * 8
+    pub fn arity(&self) -> usize {
+        self.bit_count
     }
 }
 
@@ -171,7 +171,7 @@ mod bitmap_tests {
         dbg!(&bitmap);
 
         assert_eq!(bitmap.byte_size(), 2);
-        assert_eq!(bitmap.bits_capacity(), 16);
+        assert_eq!(bitmap.arity(), 12);
         assert_eq!(DynBitmap::bytes_required(12), 2);
     }
 
@@ -230,7 +230,7 @@ mod bitmap_tests {
         let mut bitmap = DynBitmap::contained(32);
         let mut cursor: std::io::Cursor<Vec<u8>> = Default::default();
 
-        for i in 0..bitmap.bits_capacity() - 1 {
+        for i in 0..bitmap.arity() - 1 {
             bitmap.set(i, true).unwrap();
             cursor.set_position(0);
             bitmap.write(&mut cursor).unwrap();
