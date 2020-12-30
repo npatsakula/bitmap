@@ -79,9 +79,12 @@ impl DynBitmap {
             })
     }
 
+    /// Get `value` from `byte` for exact bit-`index`.
     #[inline(always)]
-    pub fn get_value(byte: u8, index: u8) -> bool {
-        ((byte >> index) & 0x01) == 1
+    fn get_value(byte: u8, index: u8) -> bool {
+        // We shift byte-value on `index`-bit and apply bit **and**-operation
+        // with `0b0000_0001`.
+        ((byte >> index) & 0b0000_0001) == 1
     }
 
     /// Get bit value.
@@ -103,12 +106,13 @@ impl DynBitmap {
 
         let byte: u8 = self.get_byte(bit_index)?;
         let position_in_byte = Self::position_in_byte(bit_index);
-        let bit: u8 = (byte >> position_in_byte) & 0x01;
-        Ok(bit == 1)
+        Ok(Self::get_value(byte, position_in_byte))
     }
 
+    /// Set `value` in `byte` for exact bit-`index`.
     #[inline(always)]
     fn set_value(byte: u8, value: bool, index: u8) -> u8 {
+        // Unset `index` bit and set value.
         byte & !(1 << index) | ((value as u8) << index)
     }
 
@@ -170,6 +174,15 @@ impl DynBitmap {
         self.bit_count
     }
 
+    /// Iterate over the bitmap.
+    ///
+    /// # Example
+    /// ```
+    /// use dyn_bitmap::DynBitmap;
+    ///
+    /// let bitmap: DynBitmap = std::iter::repeat(true).take(128).collect();
+    /// let all: bool = bitmap.iter().all(|b| b);
+    /// ```
     pub fn iter(&self) -> impl Iterator<Item = bool> + '_ {
         self.buffer
             .iter()
