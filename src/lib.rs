@@ -110,8 +110,6 @@ impl DynBitmap {
     }
 
     /// Set `value` in `byte` for exact bit-`index`.
-    ///
-    /// Function is pure for testability and better compiler optimizations.
     #[inline(always)]
     fn set_value(byte: u8, value: bool, index: u8) -> u8 {
         // Function may look bad, but it has a better performance instead of
