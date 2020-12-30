@@ -3,7 +3,7 @@
 ## Explanation
 
 This zero-dependencies solution has been written with the aim to fill
-the a niche of a simple(zero-dependencies) and hi-performance solutions
+the a niche of a simple and high-performance solutions
 with a nice API.
 
 ## Example
