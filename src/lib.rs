@@ -112,9 +112,7 @@ impl DynBitmap {
     /// Set `value` in `byte` for exact bit-`index`.
     #[inline(always)]
     fn set_value(byte: u8, value: bool, index: u8) -> u8 {
-        // Function may look bad, but it has a better performance instead of
-        // `byte | 1 << index` and `byte & !(1 << n) separately because of
-        // branch-free nature.
+        // Unset `index` bit and set value.
         byte & !(1 << index) | ((value as u8) << index)
     }
 

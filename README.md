@@ -2,9 +2,7 @@
 
 ## Explanation
 
-This zero-dependencies solution has been written with the aim to fill
-the a niche of a simple and high-performance solutions
-with a nice API.
+Simple, fast and easy to use bitmap.
 
 ## Example
 
