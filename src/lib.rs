@@ -169,6 +169,13 @@ impl DynBitmap {
     pub fn arity(&self) -> usize {
         self.bit_count
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = bool> + '_ {
+        self.buffer
+            .iter()
+            .flat_map(|&byte| (0..=7).map(move |idx| Self::get_value(byte, idx)))
+            .take(self.arity())
+    }
 }
 
 impl std::iter::FromIterator<bool> for DynBitmap {
@@ -204,6 +211,7 @@ impl std::iter::FromIterator<bool> for DynBitmap {
 #[cfg(test)]
 mod bitmap_tests {
     use super::{DynBitmap, Error};
+    use std::iter::FromIterator;
 
     #[test]
     fn new() {
@@ -253,6 +261,17 @@ mod bitmap_tests {
                 assert_eq!(max_index, 6);
             }
         };
+    }
+
+    #[test]
+    fn iter() {
+        let source = [true, false, false].iter().cycle().take(140);
+        let from_iter = DynBitmap::from_iter(source.clone().copied());
+        assert_eq!(from_iter.iter().size_hint().1.unwrap(), 140);
+
+        let source: Vec<_> = source.copied().collect();
+        let from_iter: Vec<_> = from_iter.iter().collect();
+        assert_eq!(source, from_iter);
     }
 
     #[test]
