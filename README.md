@@ -20,7 +20,7 @@ let source = [true, false, false].iter()
 // construct bitmap manually with `contained/1`.
 //
 // `DynBitmap` has high-performance `from_iter` method,
-// it's preferable to `contained/1`.
+// which is preferable to `contained/1`.
 let mut bitmap: DynBitmap = source.copied().collect();
 
 // You can set value of bitmap using `set/2` function.
