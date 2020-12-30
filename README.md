@@ -27,7 +27,7 @@ let mut bitmap: DynBitmap = source.copied().collect();
 // It returns additional information in case of an error.
 bitmap.set(true, 1).unwrap();
 // You can check value of some particular bit using `get/1`.
-// Note, that bit's index starts from `0`.
+// Note, that bit index starts from `0`.
 assert_eq!(bitmap.get(1).unwrap(), true);
 
 // You can iterate over bit values using `iter/0` function.
