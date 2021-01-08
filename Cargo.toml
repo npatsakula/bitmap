@@ -9,5 +9,12 @@ documentation = "https://docs.rs/dyn_bitmap"
 repository = "https://github.com/npatsakula/bitmap"
 readme = "README.md"
 
+[dev-dependencies]
+criterion = "0.3"
+
 [dependencies]
 thiserror = "1"
+
+[[bench]]
+name = "constructor"
+harness = false
