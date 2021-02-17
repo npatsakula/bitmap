@@ -213,9 +213,7 @@ impl std::iter::FromIterator<bool> for DynBitmap {
             bit_count += 1;
         }
 
-        if bit_idx != 8 {
-            buffer.push(byte);
-        }
+        buffer.push(byte);
 
         Self { buffer, bit_count }
     }
@@ -224,7 +222,6 @@ impl std::iter::FromIterator<bool> for DynBitmap {
 #[cfg(test)]
 mod bitmap_tests {
     use super::{DynBitmap, Error};
-    use std::iter::FromIterator;
 
     #[test]
     fn new() {
@@ -279,7 +276,7 @@ mod bitmap_tests {
     #[test]
     fn iter() {
         let source = [true, false, false].iter().cycle().take(140);
-        let from_iter = DynBitmap::from_iter(source.clone().copied());
+        let from_iter: DynBitmap = source.clone().copied().collect();
         assert_eq!(from_iter.iter().size_hint().1.unwrap(), 140);
 
         let source: Vec<_> = source.copied().collect();
@@ -332,5 +329,52 @@ mod bitmap_tests {
                 ((1u32 << (i as u32 + 1)) - 1).to_le_bytes()
             );
         }
+    }
+
+    #[test]
+    fn small_values_from_iter_test() {
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(3).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b101);
+        assert_eq!(from_iter.buffer.len(), 1);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(4).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b0101);
+        assert_eq!(from_iter.buffer.len(), 1);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(5).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b10101);
+        assert_eq!(from_iter.buffer.len(), 1);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(6).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b010101);
+        assert_eq!(from_iter.buffer.len(), 1);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(7).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b1010101);
+        assert_eq!(from_iter.buffer.len(), 1);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(8).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b01010101);
+        assert_eq!(from_iter.buffer.len(), 1);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(9).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b01010101);
+        assert_eq!(from_iter.buffer[1], 0b1);
+        assert_eq!(from_iter.buffer.len(), 2);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(10).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b01010101);
+        assert_eq!(from_iter.buffer[1], 0b01);
+        assert_eq!(from_iter.buffer.len(), 2);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(11).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b01010101);
+        assert_eq!(from_iter.buffer[1], 0b101);
+        assert_eq!(from_iter.buffer.len(), 2);
+
+        let from_iter: DynBitmap = [true, false].iter().cycle().take(16).copied().collect();
+        assert_eq!(from_iter.buffer[0], 0b01010101);
+        assert_eq!(from_iter.buffer[1], 0b01010101);
+        assert_eq!(from_iter.buffer.len(), 2);
     }
 }
