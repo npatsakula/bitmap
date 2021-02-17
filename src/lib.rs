@@ -222,7 +222,6 @@ impl std::iter::FromIterator<bool> for DynBitmap {
 #[cfg(test)]
 mod bitmap_tests {
     use super::{DynBitmap, Error};
-    use std::iter::FromIterator;
 
     #[test]
     fn new() {
@@ -277,7 +276,7 @@ mod bitmap_tests {
     #[test]
     fn iter() {
         let source = [true, false, false].iter().cycle().take(140);
-        let from_iter = DynBitmap::from_iter(source.clone().copied());
+        let from_iter: DynBitmap = source.clone().copied().collect();
         assert_eq!(from_iter.iter().size_hint().1.unwrap(), 140);
 
         let source: Vec<_> = source.copied().collect();
